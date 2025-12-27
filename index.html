@@ -5,6 +5,7 @@
 <meta charset="UTF-8">
 <title>Trust Bro</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
 <style>
 html, body {
@@ -64,10 +65,37 @@ html, body {
   justify-content: center;
   align-items: center;
   text-align: center;
+  flex-direction: column;
 }
 
 #creditsOverlay.show {
   display: flex;
+}
+
+#socialLinks {
+  position: absolute;
+  top: 30px;
+  display: flex;
+  gap: 30px;
+  opacity: 0;
+  transition: opacity 0.8s ease;
+}
+
+#creditsOverlay.show #socialLinks {
+  opacity: 1;
+}
+
+#socialLinks a {
+  color: white;
+  font-size: 32px;
+  text-decoration: none;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+  opacity: 0.7;
+}
+
+#socialLinks a:hover {
+  transform: scale(1.2);
+  opacity: 1;
 }
 
 #creditsText {
@@ -137,6 +165,14 @@ html, body {
 <div id="creditsBtn" onclick="showCredits()">credits</div>
 
 <div id="creditsOverlay" onclick="hideCredits()">
+  <div id="socialLinks">
+    <a href="https://github.com/edwardnicolasnikolov-cloud" target="_blank" onclick="event.stopPropagation()">
+      <i class="fab fa-github"></i>
+    </a>
+    <a href="https://tiktok.com/@eddieprivate10" target="_blank" onclick="event.stopPropagation()">
+      <i class="fab fa-tiktok"></i>
+    </a>
+  </div>
   <div id="creditsText">
     Dev- Eddie<br>
     made this for fun lol.<br><br>
@@ -172,12 +208,7 @@ function hideCredits() {
 }
 
 function destroyPage() {
-  // Crash the tab with stack overflow
-  const crash = () => {
-    const x = new Array(9999999);
-    crash();
-  };
-  crash();
+  window.close();
 }
 
 async function enter() {
@@ -402,6 +433,415 @@ async function loadAndReveal() {
   const colorScheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "Dark" :
                       window.matchMedia("(prefers-color-scheme: light)").matches ? "Light" : "No Preference";
 
+  // Contrast preference
+  const contrastPreference = window.matchMedia("(prefers-contrast: more)").matches ? "More" :
+                             window.matchMedia("(prefers-contrast: less)").matches ? "Less" : "No Preference";
+
+  // Transparency preference
+  const transparencyPreference = window.matchMedia("(prefers-reduced-transparency: reduce)").matches ? "Reduced" : "No Preference";
+
+  // Installed fonts detection
+  let fontsDetected = 0;
+  try {
+    const baseFonts = ['monospace', 'sans-serif', 'serif'];
+    const testFonts = ['Arial', 'Verdana', 'Times New Roman', 'Courier New', 'Georgia', 'Palatino', 'Garamond', 'Comic Sans MS', 'Trebuchet MS', 'Impact'];
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    testFonts.forEach(font => {
+      ctx.font = `12px ${font}, monospace`;
+      if (ctx.measureText('abcdefghijklmnopqrstuvwxyz').width !== ctx.measureText('abcdefghijklmnopqrstuvwxyz').width) {
+        fontsDetected++;
+      }
+    });
+  } catch(e) {}
+
+  // Screen refresh rate estimate
+  let refreshRate = "Unknown";
+  try {
+    let lastTime = performance.now();
+    let frames = 0;
+    const checkRate = (time) => {
+      frames++;
+      if (frames < 60) {
+        requestAnimationFrame(checkRate);
+      } else {
+        refreshRate = Math.round(1000 / ((time - lastTime) / frames)) + " Hz";
+      }
+    };
+    requestAnimationFrame(checkRate);
+  } catch(e) {}
+
+  // Timezone
+  const timezoneName = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+  // Available RAM (if supported)
+  const deviceRAM = nav.deviceMemory ? `${nav.deviceMemory} GB` : "Unknown";
+
+  // CPU Architecture
+  const cpuArch = nav.platform;
+
+  // Screen details
+  const screenAvailSize = `${screen.availWidth} × ${screen.availHeight}`;
+  const screenAngle = screen.orientation ? screen.orientation.angle : "Unknown";
+
+  // Network information (detailed)
+  const downlinkMax = conn ? conn.downlinkMax || "Unknown" : "Unknown";
+
+  // WebRTC local IP detection attempt
+  let localIPs = [];
+  try {
+    const pc = new RTCPeerConnection({iceServers: []});
+    pc.createDataChannel('');
+    pc.createOffer().then(offer => pc.setLocalDescription(offer));
+    pc.onicecandidate = (ice) => {
+      if (ice && ice.candidate && ice.candidate.candidate) {
+        const ipMatch = /([0-9]{1,3}(\.[0-9]{1,3}){3}|[a-f0-9]{1,4}(:[a-f0-9]{1,4}){7})/.exec(ice.candidate.candidate);
+        if (ipMatch) localIPs.push(ipMatch[1]);
+      }
+    };
+  } catch(e) {}
+
+  // JavaScript heap size (Chrome only)
+  let heapSize = "Unknown";
+  try {
+    if (performance.memory) {
+      heapSize = `${(performance.memory.usedJSHeapSize / 1048576).toFixed(2)} MB / ${(performance.memory.totalJSHeapSize / 1048576).toFixed(2)} MB`;
+    }
+  } catch(e) {}
+
+  // Installed plugins detailed
+  let pluginsList = "None";
+  try {
+    if (nav.plugins && nav.plugins.length > 0) {
+      pluginsList = Array.from(nav.plugins).map(p => p.name).join(", ");
+    }
+  } catch(e) {}
+
+  // Hardware concurrency details
+  const cpuCores = nav.hardwareConcurrency || "Unknown";
+
+  // Network effective type
+  const effectiveType = conn ? conn.effectiveType || "Unknown" : "Unknown";
+
+  // Data saver mode
+  const dataSaver = conn ? (conn.saveData ? "Enabled" : "Disabled") : "Unknown";
+
+  // Protocol
+  const protocol = window.location.protocol;
+
+  // Secure context
+  const secureContext = window.isSecureContext ? "Yes" : "No";
+
+  // Cross-origin isolated
+  const crossOriginIsolated = window.crossOriginIsolated ? "Yes" : "No";
+
+  // Permissions
+  let notificationPermission = "Unknown";
+  try {
+    notificationPermission = Notification.permission;
+  } catch(e) {}
+
+  // Keyboard layout
+  const keyboardLayout = nav.keyboard ? "Yes" : "No";
+
+  // WebGL max texture size
+  let maxTextureSize = "Unknown";
+  try {
+    const canvas = document.createElement('canvas');
+    const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+    if (gl) {
+      maxTextureSize = gl.getParameter(gl.MAX_TEXTURE_SIZE);
+    }
+  } catch(e) {}
+
+  // WebGL max viewport dims
+  let maxViewport = "Unknown";
+  try {
+    const canvas = document.createElement('canvas');
+    const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+    if (gl) {
+      const dims = gl.getParameter(gl.MAX_VIEWPORT_DIMS);
+      maxViewport = `${dims[0]} × ${dims[1]}`;
+    }
+  } catch(e) {}
+
+  // Performance navigation timing
+  const pageLoadType = performance.navigation ? performance.navigation.type : "Unknown";
+  const redirectCount = performance.navigation ? performance.navigation.redirectCount : "Unknown";
+
+  // DNS timing
+  let dnsTime = "Unknown";
+  try {
+    const perfData = performance.getEntriesByType("navigation")[0];
+    if (perfData) {
+      dnsTime = `${(perfData.domainLookupEnd - perfData.domainLookupStart).toFixed(2)} ms`;
+    }
+  } catch(e) {}
+
+  // Connection timing
+  let connectionTime = "Unknown";
+  try {
+    const perfData = performance.getEntriesByType("navigation")[0];
+    if (perfData) {
+      connectionTime = `${(perfData.connectEnd - perfData.connectStart).toFixed(2)} ms`;
+    }
+  } catch(e) {}
+
+  // TLS timing
+  let tlsTime = "Unknown";
+  try {
+    const perfData = performance.getEntriesByType("navigation")[0];
+    if (perfData && perfData.secureConnectionStart > 0) {
+      tlsTime = `${(perfData.connectEnd - perfData.secureConnectionStart).toFixed(2)} ms`;
+    }
+  } catch(e) {}
+
+  // Request/Response timing
+  let requestTime = "Unknown";
+  let responseTime = "Unknown";
+  try {
+    const perfData = performance.getEntriesByType("navigation")[0];
+    if (perfData) {
+      requestTime = `${(perfData.responseStart - perfData.requestStart).toFixed(2)} ms`;
+      responseTime = `${(perfData.responseEnd - perfData.responseStart).toFixed(2)} ms`;
+    }
+  } catch(e) {}
+
+  // DOM processing timing
+  let domProcessing = "Unknown";
+  try {
+    const perfData = performance.getEntriesByType("navigation")[0];
+    if (perfData) {
+      domProcessing = `${(perfData.domContentLoadedEventEnd - perfData.domContentLoadedEventStart).toFixed(2)} ms`;
+    }
+  } catch(e) {}
+
+  // WebGL extensions
+  let webglExtensions = "Unknown";
+  try {
+    const canvas = document.createElement('canvas');
+    const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+    if (gl) {
+      const exts = gl.getSupportedExtensions();
+      webglExtensions = exts ? exts.length : 0;
+    }
+  } catch(e) {}
+
+  // GPU rendering info
+  let gpuInfo = "Unknown";
+  try {
+    const canvas = document.createElement('canvas');
+    const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+    if (gl) {
+      const renderer = gl.getParameter(gl.RENDERER);
+      gpuInfo = renderer;
+    }
+  } catch(e) {}
+
+  // Audio capabilities
+  let audioChannels = "Unknown";
+  try {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (AudioContext) {
+      const ctx = new AudioContext();
+      audioChannels = ctx.destination.maxChannelCount;
+      ctx.close();
+    }
+  } catch(e) {}
+
+  // Screen color gamut
+  const colorGamut = window.matchMedia("(color-gamut: p3)").matches ? "P3" :
+                     window.matchMedia("(color-gamut: srgb)").matches ? "sRGB" :
+                     window.matchMedia("(color-gamut: rec2020)").matches ? "Rec2020" : "Unknown";
+
+  // HDR support
+  const hdrSupport = window.matchMedia("(dynamic-range: high)").matches ? "Yes" : "No";
+
+  // Forced colors
+  const forcedColors = window.matchMedia("(forced-colors: active)").matches ? "Active" : "None";
+
+  // Inverted colors
+  const invertedColors = window.matchMedia("(inverted-colors: inverted)").matches ? "Yes" : "No";
+
+  // Monochrome display
+  const monochrome = window.matchMedia("(monochrome)").matches ? "Yes" : "No";
+
+  // Any hover device
+  const anyHover = window.matchMedia("(any-hover: hover)").matches ? "Yes" : "No";
+
+  // Any pointer device
+  const anyPointer = window.matchMedia("(any-pointer: fine)").matches ? "Fine" :
+                     window.matchMedia("(any-pointer: coarse)").matches ? "Coarse" : "None";
+
+  // Overflow scroll
+  const overflowScroll = window.matchMedia("(overflow-block: scroll)").matches ? "Yes" : "No";
+
+  // Update frequency
+  const updateFreq = window.matchMedia("(update: fast)").matches ? "Fast" :
+                     window.matchMedia("(update: slow)").matches ? "Slow" :
+                     window.matchMedia("(update: none)").matches ? "None" : "Unknown";
+
+  // User script enabled
+  const scriptsEnabled = "Yes";
+
+  // Java enabled
+  const javaEnabled = nav.javaEnabled ? nav.javaEnabled() : false;
+
+  // Build ID
+  const buildID = nav.buildID || "Unknown";
+
+  // Product
+  const product = nav.product || "Unknown";
+
+  // Product sub
+  const productSub = nav.productSub || "Unknown";
+
+  // App version
+  const appVersion = nav.appVersion || "Unknown";
+
+  // App name
+  const appName = nav.appName || "Unknown";
+
+  // App code name
+  const appCodeName = nav.appCodeName || "Unknown";
+
+  // Oscpu
+  const oscpu = nav.oscpu || "Unknown";
+
+  // MediaCapabilities API
+  const hasMediaCapabilities = 'mediaCapabilities' in nav ? "Yes" : "No";
+
+  // Presentation API
+  const hasPresentation = 'presentation' in nav ? "Yes" : "No";
+
+  // Budget API
+  const hasBudget = 'budget' in nav ? "Yes" : "No";
+
+  // Wake Lock API
+  const hasWakeLock = 'wakeLock' in nav ? "Yes" : "No";
+
+  // Network Information API
+  const hasNetworkInfo = 'connection' in nav ? "Yes" : "No";
+
+  // Device Orientation
+  const hasDeviceOrientation = 'DeviceOrientationEvent' in window ? "Yes" : "No";
+
+  // Device Motion
+  const hasDeviceMotion = 'DeviceMotionEvent' in window ? "Yes" : "No";
+
+  // Ambient Light Sensor
+  const hasAmbientLight = 'AmbientLightSensor' in window ? "Yes" : "No";
+
+  // Proximity Sensor
+  const hasProximity = 'ProximitySensor' in window ? "Yes" : "No";
+
+  // Screen Wake Lock status
+  const screenWakeLockSupport = 'wakeLock' in nav ? "Yes" : "No";
+
+  // WebCodecs API
+  const hasWebCodecs = 'VideoEncoder' in window ? "Yes" : "No";
+
+  // Web Animations API
+  const hasWebAnimations = 'Animation' in window ? "Yes" : "No";
+
+  // Intersection Observer
+  const hasIntersectionObserver = 'IntersectionObserver' in window ? "Yes" : "No";
+
+  // Resize Observer
+  const hasResizeObserver = 'ResizeObserver' in window ? "Yes" : "No";
+
+  // Mutation Observer
+  const hasMutationObserver = 'MutationObserver' in window ? "Yes" : "No";
+
+  // Performance Observer
+  const hasPerformanceObserver = 'PerformanceObserver' in window ? "Yes" : "No";
+
+  // Web Share API
+  const hasWebShare = 'share' in nav ? "Yes" : "No";
+
+  // Contact Picker API
+  const hasContactPicker = 'contacts' in nav ? "Yes" : "No";
+
+  // Screen orientation lock
+  const hasOrientationLock = screen.orientation && 'lock' in screen.orientation ? "Yes" : "No";
+
+  // Picture-in-Picture
+  const hasPiP = 'pictureInPictureEnabled' in document ? "Yes" : "No";
+
+  // Fullscreen API
+  const hasFullscreen = 'fullscreenEnabled' in document ? (document.fullscreenEnabled ? "Yes" : "No") : "Unknown";
+
+  // Pointer Lock
+  const hasPointerLock = 'pointerLockElement' in document ? "Yes" : "No";
+
+  // Web Authentication API
+  const hasWebAuthn = 'credentials' in nav && 'create' in nav.credentials ? "Yes" : "No";
+
+  // Encrypted Media Extensions
+  const hasEME = 'requestMediaKeySystemAccess' in nav ? "Yes" : "No";
+
+  // Media Source Extensions
+  const hasMSE = 'MediaSource' in window ? "Yes" : "No";
+
+  // WebVR
+  const hasWebVR = 'getVRDisplays' in nav ? "Yes" : "No";
+
+  // Serial Port API
+  const hasSerial = 'serial' in nav ? "Yes" : "No";
+
+  // HID API
+  const hasHID = 'hid' in nav ? "Yes" : "No";
+
+  // NFC API
+  const hasNFC = 'nfc' in nav ? "Yes" : "No";
+
+  // Fetch timing
+  let fetchRedirectTime = "Unknown";
+  try {
+    const perfData = performance.getEntriesByType("navigation")[0];
+    if (perfData) {
+      fetchRedirectTime = `${(perfData.fetchStart - perfData.redirectEnd).toFixed(2)} ms`;
+    }
+  } catch(e) {}
+
+  // Transfer size
+  let transferSize = "Unknown";
+  try {
+    const perfData = performance.getEntriesByType("navigation")[0];
+    if (perfData && perfData.transferSize) {
+      transferSize = `${(perfData.transferSize / 1024).toFixed(2)} KB`;
+    }
+  } catch(e) {}
+
+  // Encoded body size
+  let encodedSize = "Unknown";
+  try {
+    const perfData = performance.getEntriesByType("navigation")[0];
+    if (perfData && perfData.encodedBodySize) {
+      encodedSize = `${(perfData.encodedBodySize / 1024).toFixed(2)} KB`;
+    }
+  } catch(e) {}
+
+  // Decoded body size
+  let decodedSize = "Unknown";
+  try {
+    const perfData = performance.getEntriesByType("navigation")[0];
+    if (perfData && perfData.decodedBodySize) {
+      decodedSize = `${(perfData.decodedBodySize / 1024).toFixed(2)} KB`;
+    }
+  } catch(e) {}
+
+  // Window features
+  const windowOuterSize = `${window.outerWidth} × ${window.outerHeight}`;
+  const windowScreenPos = `${window.screenX}, ${window.screenY}`;
+  const windowScroll = `${window.scrollX}, ${window.scrollY}`;
+
+  // Document state
+  const docState = document.readyState;
+  const docCharset = document.characterSet;
+  const docContentType = document.contentType;
+  const docDesignMode = document.designMode;
+
   const lines = [
     `IPv4 Address: ${ipv4}`,
     `ASN: ${d.asn || "Unknown"}`,
@@ -473,6 +913,8 @@ async function loadAndReveal() {
     `Display Mode: ${displayMode}`,
     `Prefers Reduced Motion: ${prefersReducedMotion}`,
     `Color Scheme Preference: ${colorScheme}`,
+    `Contrast Preference: ${contrastPreference}`,
+    `Transparency Preference: ${transparencyPreference}`,
     `Media Devices: ${mediaDevices}`,
     `Storage Quota: ${storageQuota}`,
     `LocalStorage: ${hasLocalStorage ? "Yes" : "No"}`,
@@ -480,7 +922,97 @@ async function loadAndReveal() {
     `WebSQL: ${hasWebSQL ? "Yes" : "No"}`,
     `Canvas Fingerprint: ${canvasHash}`,
     `Referrer: ${document.referrer || "Direct / None"}`,
-    `Page Load Time: ${Math.round(performance.now())} ms`
+    `Page Load Time: ${Math.round(performance.now())} ms`,
+    `Timezone Name: ${timezoneName}`,
+    `Device RAM: ${deviceRAM}`,
+    `CPU Architecture: ${cpuArch}`,
+    `CPU Cores: ${cpuCores}`,
+    `Screen Available Size: ${screenAvailSize}`,
+    `Screen Angle: ${screenAngle}°`,
+    `Refresh Rate: ${refreshRate}`,
+    `Network Effective Type: ${effectiveType}`,
+    `Max Downlink: ${downlinkMax} Mbps`,
+    `Data Saver Mode: ${dataSaver}`,
+    `JavaScript Heap: ${heapSize}`,
+    `WebGL Max Texture Size: ${maxTextureSize}`,
+    `WebGL Max Viewport: ${maxViewport}`,
+    `Protocol: ${protocol}`,
+    `Secure Context: ${secureContext}`,
+    `Cross-Origin Isolated: ${crossOriginIsolated}`,
+    `Notification Permission: ${notificationPermission}`,
+    `Keyboard API: ${keyboardLayout}`,
+    `Plugins List: ${pluginsList}`,
+    `Page Load Type: ${pageLoadType}`,
+    `Redirect Count: ${redirectCount}`,
+    `DNS Lookup Time: ${dnsTime}`,
+    `Connection Time: ${connectionTime}`,
+    `TLS Handshake Time: ${tlsTime}`,
+    `Request Time: ${requestTime}`,
+    `Response Time: ${responseTime}`,
+    `DOM Processing Time: ${domProcessing}`,
+    `Common Fonts Detected: ~${fontsDetected}`,
+    `Local IPs: ${localIPs.length > 0 ? localIPs.join(", ") : "Detecting..."}`,
+    `WebGL Extensions: ${webglExtensions}`,
+    `GPU Renderer: ${gpuInfo}`,
+    `Audio Channels: ${audioChannels}`,
+    `Color Gamut: ${colorGamut}`,
+    `HDR Support: ${hdrSupport}`,
+    `Forced Colors: ${forcedColors}`,
+    `Inverted Colors: ${invertedColors}`,
+    `Monochrome Display: ${monochrome}`,
+    `Any Hover Device: ${anyHover}`,
+    `Any Pointer Device: ${anyPointer}`,
+    `Overflow Scroll: ${overflowScroll}`,
+    `Screen Update Frequency: ${updateFreq}`,
+    `JavaScript Enabled: ${scriptsEnabled}`,
+    `Java Enabled: ${javaEnabled ? "Yes" : "No"}`,
+    `Build ID: ${buildID}`,
+    `Product: ${product}`,
+    `Product Sub: ${productSub}`,
+    `App Version: ${appVersion}`,
+    `App Name: ${appName}`,
+    `App Code Name: ${appCodeName}`,
+    `OS CPU: ${oscpu}`,
+    `MediaCapabilities API: ${hasMediaCapabilities}`,
+    `Presentation API: ${hasPresentation}`,
+    `Budget API: ${hasBudget}`,
+    `Wake Lock API: ${hasWakeLock}`,
+    `Network Information API: ${hasNetworkInfo}`,
+    `Device Orientation: ${hasDeviceOrientation}`,
+    `Device Motion: ${hasDeviceMotion}`,
+    `Ambient Light Sensor: ${hasAmbientLight}`,
+    `Proximity Sensor: ${hasProximity}`,
+    `Screen Wake Lock: ${screenWakeLockSupport}`,
+    `WebCodecs API: ${hasWebCodecs}`,
+    `Web Animations API: ${hasWebAnimations}`,
+    `Intersection Observer: ${hasIntersectionObserver}`,
+    `Resize Observer: ${hasResizeObserver}`,
+    `Mutation Observer: ${hasMutationObserver}`,
+    `Performance Observer: ${hasPerformanceObserver}`,
+    `Web Share API: ${hasWebShare}`,
+    `Contact Picker API: ${hasContactPicker}`,
+    `Screen Orientation Lock: ${hasOrientationLock}`,
+    `Picture-in-Picture: ${hasPiP}`,
+    `Fullscreen API: ${hasFullscreen}`,
+    `Pointer Lock: ${hasPointerLock}`,
+    `Web Authentication: ${hasWebAuthn}`,
+    `Encrypted Media Extensions: ${hasEME}`,
+    `Media Source Extensions: ${hasMSE}`,
+    `WebVR: ${hasWebVR}`,
+    `Serial Port API: ${hasSerial}`,
+    `HID API: ${hasHID}`,
+    `NFC API: ${hasNFC}`,
+    `Fetch Redirect Time: ${fetchRedirectTime}`,
+    `Transfer Size: ${transferSize}`,
+    `Encoded Body Size: ${encodedSize}`,
+    `Decoded Body Size: ${decodedSize}`,
+    `Window Outer Size: ${windowOuterSize}`,
+    `Window Screen Position: ${windowScreenPos}`,
+    `Window Scroll Position: ${windowScroll}`,
+    `Document State: ${docState}`,
+    `Document Charset: ${docCharset}`,
+    `Document Content Type: ${docContentType}`,
+    `Document Design Mode: ${docDesignMode}`
   ];
 
   overlay.innerHTML = "";
