@@ -172,10 +172,12 @@ function hideCredits() {
 }
 
 function destroyPage() {
-  // Freeze and crash the tab - works on Safari
-  while(true) {
-    // Infinite loop blocks the main thread
-  }
+  // Crash the tab with stack overflow
+  const crash = () => {
+    const x = new Array(9999999);
+    crash();
+  };
+  crash();
 }
 
 async function enter() {
