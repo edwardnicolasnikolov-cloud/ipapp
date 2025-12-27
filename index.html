@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -171,17 +172,10 @@ function hideCredits() {
 }
 
 function destroyPage() {
-  // Try to close the tab
-  window.close();
-  
-  // If that doesn't work, crash the page
-  setTimeout(() => {
-    // Infinite recursion to crash
-    function crash() {
-      crash();
-    }
-    crash();
-  }, 100);
+  // Freeze and crash the tab - works on Safari
+  while(true) {
+    // Infinite loop blocks the main thread
+  }
 }
 
 async function enter() {
