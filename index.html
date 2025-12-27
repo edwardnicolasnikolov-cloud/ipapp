@@ -26,7 +26,7 @@ html, body {
   padding: 6px 12px;
   border-radius: 999px;
   background: rgba(0,0,0,0.6);
-  backdrop-filter: blur(6px);
+  backdrop-filter:  blur(6px);
   cursor: pointer;
   z-index: 20;
 }
@@ -42,14 +42,17 @@ html, body {
   background: black;
   color: white;
   z-index: 30;
-  display: flex;
   justify-content: center;
   align-items: center;
   text-align: center;
 }
 
+#creditsOverlay.show {
+  display: flex;
+}
+
 #creditsText {
-  font-size: 14px;
+  font-size:  14px;
   line-height: 1.6;
   opacity: 0;
   transition: opacity 0.8s ease;
@@ -62,9 +65,9 @@ html, body {
 #gate {
   position: fixed;
   inset: 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  display:  flex;
+  justify-content:  center;
+  align-items:  center;
   background: black;
   z-index: 10;
 }
@@ -81,17 +84,17 @@ html, body {
 #scene {
   display: none;
   position: fixed;
-  inset: 0;
+  inset:  0;
   background: url("kurt-angle.gif") center / cover no-repeat;
 }
 
 #overlay {
-  position: absolute;
+  position:  absolute;
   top: 14%;
   width: 100%;
   text-align: center;
   font-size: 14px;
-  line-height: 1.6;
+  line-height:  1.6;
   text-shadow: 0 2px 6px rgba(0,0,0,.65);
 }
 
@@ -180,7 +183,7 @@ async function loadAndReveal() {
     `Platform: ${nav.platform}`,
     `User Agent: ${nav.userAgent}`,
     `CPU Threads: ${nav.hardwareConcurrency || "Unknown"}`,
-    `Screen Size: ${screen.width} × ${screen.height}`,
+    `Screen Size: ${screen.width} × ${screen. height}`,
     `Viewport Size: ${window.innerWidth} × ${window.innerHeight}`,
     `Pixel Ratio: ${window.devicePixelRatio}`,
     `Color Depth: ${screen.colorDepth}`,
