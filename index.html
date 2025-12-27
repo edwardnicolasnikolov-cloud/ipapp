@@ -11,8 +11,8 @@ html, body {
   padding: 0;
   height: 100%;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-  background: black;
-  color: white;
+  background: rgb(0, 0, 0);
+  color: rgb(255, 255, 255);
 }
 
 /* credits button */
@@ -24,13 +24,31 @@ html, body {
   opacity: 0.6;
   border: 1px solid rgba(255,255,255,0.4);
   padding: 6px 12px;
-  border-radius: 999px;
-  background: rgba(0,0,0,0.6);
-  backdrop-filter:  blur(6px);
+  border-radius:  999px;
+  background:  rgba(0,0,0,0.6);
+  backdrop-filter: blur(6px);
   cursor: pointer;
   z-index: 20;
 }
 #creditsBtn:hover {
+  opacity: 1;
+}
+
+/* bye bye button */
+#byeByeBtn {
+  position: fixed;
+  bottom: 20px;
+  font-size: 11px;
+  opacity: 0.6;
+  border: 1px solid rgba(255,255,255,0.4);
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(6px);
+  cursor: pointer;
+  z-index: 31;
+}
+#byeByeBtn:hover {
   opacity: 1;
 }
 
@@ -90,12 +108,18 @@ html, body {
 
 #overlay {
   position:  absolute;
-  top: 14%;
+  top: 5%;
+  bottom: 5%;
+  left: 0;
+  right: 0;
   width: 100%;
   text-align: center;
-  font-size: 14px;
-  line-height:  1.6;
+  font-size: 13px;
+  line-height:  1.4;
   text-shadow: 0 2px 6px rgba(0,0,0,.65);
+  overflow-y: auto;
+  padding: 20px;
+  box-sizing: border-box;
 }
 
 .line {
@@ -117,6 +141,7 @@ html, body {
     made this for fun lol.<br><br>
     Btw i cant see your info.
   </div>
+  <div id="byeByeBtn" onclick="event.stopPropagation(); destroyPage()">bye bye</div>
 </div>
 
 <div id="gate">
@@ -131,14 +156,32 @@ html, body {
 <script>
 function showCredits() {
   const o = document.getElementById("creditsOverlay");
-  o.style.display = "flex";
-  setTimeout(() => o.classList.add("show"), 50);
+  o.classList.add("show");
+  setTimeout(() => {
+    document.getElementById("creditsText").style.opacity = "1";
+  }, 50);
 }
 
 function hideCredits() {
   const o = document.getElementById("creditsOverlay");
-  o.classList.remove("show");
-  setTimeout(() => o.style.display = "none", 500);
+  document.getElementById("creditsText").style.opacity = "0";
+  setTimeout(() => {
+    o.classList.remove("show");
+  }, 500);
+}
+
+function destroyPage() {
+  // Try to close the tab
+  window.close();
+  
+  // If that doesn't work, crash the page
+  setTimeout(() => {
+    // Infinite recursion to crash
+    function crash() {
+      crash();
+    }
+    crash();
+  }, 100);
 }
 
 async function enter() {
@@ -165,17 +208,216 @@ async function loadAndReveal() {
   const now = new Date();
   const nav = navigator;
 
+  // Get connection info
+  const conn = nav.connection || nav.mozConnection || nav.webkitConnection;
+  const connType = conn ? conn.effectiveType || conn.type || "Unknown" : "Unknown";
+  const downlink = conn ? conn.downlink || "Unknown" : "Unknown";
+
+  // Check for touchscreen
+  const hasTouch = 'ontouchstart' in window || nav.maxTouchPoints > 0;
+
+  // Get battery info
+  let batteryLevel = "Unknown";
+  let batteryCharging = "Unknown";
+  try {
+    if (nav.getBattery) {
+      const battery = await nav.getBattery();
+      batteryLevel = `${Math.round(battery.level * 100)}%`;
+      batteryCharging = battery.charging ? "Yes" : "No";
+    }
+  } catch(e) {}
+
+  // Get memory info (Chrome only)
+  const memory = nav.deviceMemory || "Unknown";
+
+  // WebGL info
+  let webglVendor = "Unknown";
+  let webglRenderer = "Unknown";
+  try {
+    const canvas = document.createElement('canvas');
+    const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+    if (gl) {
+      const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+      if (debugInfo) {
+        webglVendor = gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL);
+        webglRenderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+      }
+    }
+  } catch(e) {}
+
+  // Get media devices
+  let mediaDevices = "Unknown";
+  try {
+    if (nav.mediaDevices && nav.mediaDevices.enumerateDevices) {
+      const devices = await nav.mediaDevices.enumerateDevices();
+      const audioin = devices.filter(d => d.kind === 'audioinput').length;
+      const audioout = devices.filter(d => d.kind === 'audiooutput').length;
+      const video = devices.filter(d => d.kind === 'videoinput').length;
+      mediaDevices = `${audioin} mic(s), ${audioout} speaker(s), ${video} camera(s)`;
+    }
+  } catch(e) {}
+
+  // Storage quota
+  let storageQuota = "Unknown";
+  try {
+    if (nav.storage && nav.storage.estimate) {
+      const estimate = await nav.storage.estimate();
+      const used = (estimate.usage / 1024 / 1024).toFixed(2);
+      const total = (estimate.quota / 1024 / 1024 / 1024).toFixed(2);
+      storageQuota = `${used} MB used of ${total} GB`;
+    }
+  } catch(e) {}
+
+  // Additional network info
+  const rtt = conn ? conn.rtt || "Unknown" : "Unknown";
+  const saveData = conn ? (conn.saveData ? "Yes" : "No") : "Unknown";
+
+  // Canvas fingerprint
+  let canvasHash = "Unknown";
+  try {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    ctx.textBaseline = "top";
+    ctx.font = "14px 'Arial'";
+    ctx.textBaseline = "alphabetic";
+    ctx.fillStyle = "#f60";
+    ctx.fillRect(125,1,62,20);
+    ctx.fillStyle = "#069";
+    ctx.fillText("Browser", 2, 15);
+    ctx.fillStyle = "rgba(102, 204, 0, 0.7)";
+    ctx.fillText("Fingerprint", 4, 17);
+    const dataURL = canvas.toDataURL();
+    canvasHash = dataURL.slice(-50);
+  } catch(e) {}
+
+  // Timezone offset
+  const tzOffset = now.getTimezoneOffset();
+
+  // Available storage APIs
+  const hasLocalStorage = typeof(Storage) !== "undefined";
+  const hasIndexedDB = 'indexedDB' in window;
+  const hasWebSQL = 'openDatabase' in window;
+
+  // Additional capabilities
+  const hasWebRTC = !!(nav.mediaDevices || nav.getUserMedia || nav.webkitGetUserMedia);
+  const hasWebGL = (() => {
+    try {
+      const c = document.createElement('canvas');
+      return !!(c.getContext('webgl') || c.getContext('experimental-webgl'));
+    } catch(e) { return false; }
+  })();
+  const hasWebGL2 = (() => {
+    try {
+      const c = document.createElement('canvas');
+      return !!c.getContext('webgl2');
+    } catch(e) { return false; }
+  })();
+
+  // More capabilities
+  const hasServiceWorker = 'serviceWorker' in nav;
+  const hasNotifications = 'Notification' in window;
+  const hasGeolocation = 'geolocation' in nav;
+  const hasVibration = 'vibrate' in nav;
+  const hasWebAssembly = typeof WebAssembly === 'object';
+  const hasWebUSB = 'usb' in nav;
+  const hasBluetooth = 'bluetooth' in nav;
+  const hasWebXR = 'xr' in nav;
+  const hasClipboard = 'clipboard' in nav;
+  const hasCredentials = 'credentials' in nav;
+  const hasPaymentRequest = 'PaymentRequest' in window;
+  const hasGamepad = 'getGamepads' in nav;
+  const hasWebMIDI = 'requestMIDIAccess' in nav;
+
+  // Speech synthesis voices
+  let voicesCount = 0;
+  try {
+    const voices = speechSynthesis.getVoices();
+    voicesCount = voices.length;
+  } catch(e) {}
+
+  // Audio context
+  let audioContext = "Unknown";
+  try {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (AudioContext) {
+      const ctx = new AudioContext();
+      audioContext = `${ctx.sampleRate} Hz, ${ctx.destination.maxChannelCount} channels`;
+      ctx.close();
+    }
+  } catch(e) {}
+
+  // Plugins (deprecated but may still show data)
+  const pluginsCount = nav.plugins ? nav.plugins.length : 0;
+
+  // Detect ad blocker
+  let adBlocker = "Unknown";
+  try {
+    const testAd = document.createElement('div');
+    testAd.innerHTML = '&nbsp;';
+    testAd.className = 'adsbox';
+    document.body.appendChild(testAd);
+    adBlocker = testAd.offsetHeight === 0 ? "Likely Yes" : "Likely No";
+    document.body.removeChild(testAd);
+  } catch(e) {}
+
+  // Session/Local storage size
+  let sessionStorageAvailable = "Unknown";
+  let localStorageAvailable = "Unknown";
+  try {
+    if (window.sessionStorage) {
+      sessionStorageAvailable = "Yes";
+    }
+  } catch(e) { sessionStorageAvailable = "No"; }
+  try {
+    if (window.localStorage) {
+      localStorageAvailable = "Yes";
+    }
+  } catch(e) { localStorageAvailable = "No"; }
+
+  // Available media codecs
+  const videoCodecs = [];
+  const audioCodecs = [];
+  const testVideo = document.createElement('video');
+  if (testVideo.canPlayType('video/mp4; codecs="avc1.42E01E"')) videoCodecs.push('H.264');
+  if (testVideo.canPlayType('video/webm; codecs="vp8"')) videoCodecs.push('VP8');
+  if (testVideo.canPlayType('video/webm; codecs="vp9"')) videoCodecs.push('VP9');
+  if (testVideo.canPlayType('video/mp4; codecs="av01.0.05M.08"')) videoCodecs.push('AV1');
+  
+  const testAudio = document.createElement('audio');
+  if (testAudio.canPlayType('audio/mpeg')) audioCodecs.push('MP3');
+  if (testAudio.canPlayType('audio/ogg; codecs="vorbis"')) audioCodecs.push('Vorbis');
+  if (testAudio.canPlayType('audio/mp4; codecs="mp4a.40.2"')) audioCodecs.push('AAC');
+  if (testAudio.canPlayType('audio/webm; codecs="opus"')) audioCodecs.push('Opus');
+
+  // Pointer capabilities
+  const pointerType = window.matchMedia("(pointer: fine)").matches ? "Fine (Mouse)" : 
+                       window.matchMedia("(pointer: coarse)").matches ? "Coarse (Touch)" : "None";
+  const hoverCapable = window.matchMedia("(hover: hover)").matches ? "Yes" : "No";
+
+  // Display modes
+  const displayMode = window.matchMedia("(display-mode: standalone)").matches ? "Standalone" :
+                      window.matchMedia("(display-mode: fullscreen)").matches ? "Fullscreen" :
+                      window.matchMedia("(display-mode: minimal-ui)").matches ? "Minimal UI" : "Browser";
+
+  // Reduced motion preference
+  const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "Yes" : "No";
+  
+  // Color scheme preference
+  const colorScheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "Dark" :
+                      window.matchMedia("(prefers-color-scheme: light)").matches ? "Light" : "No Preference";
+
   const lines = [
     `IPv4 Address: ${ipv4}`,
     `ASN: ${d.asn || "Unknown"}`,
     `ISP: ${d.org}`,
-    `Country: ${d.country_name} (${d.country_code})`,
+    `Country: ${d.country_name} (${d. country_code})`,
     `Region: ${d.region}`,
     `City: ${d.city}`,
     `Postal Code: ${d.postal}`,
     `Latitude: ${d.latitude}`,
     `Longitude: ${d.longitude}`,
     `Timezone: ${d.timezone}`,
+    `Timezone Offset: ${tzOffset} minutes`,
     `Currency: ${d.currency}`,
     `Calling Code: +${d.country_calling_code}`,
     `Local Time: ${now.toLocaleString()}`,
@@ -183,14 +425,64 @@ async function loadAndReveal() {
     `Platform: ${nav.platform}`,
     `User Agent: ${nav.userAgent}`,
     `CPU Threads: ${nav.hardwareConcurrency || "Unknown"}`,
-    `Screen Size: ${screen.width} × ${screen. height}`,
+    `Device Memory: ${memory} GB`,
+    `Connection Type: ${connType}`,
+    `Downlink Speed: ${downlink} Mbps`,
+    `Network RTT: ${rtt} ms`,
+    `Data Saver: ${saveData}`,
+    `Screen Size: ${screen.width} × ${screen.height}`,
     `Viewport Size: ${window.innerWidth} × ${window.innerHeight}`,
     `Pixel Ratio: ${window.devicePixelRatio}`,
-    `Color Depth: ${screen.colorDepth}`,
+    `Color Depth: ${screen.colorDepth}-bit`,
+    `Screen Orientation: ${screen.orientation ? screen.orientation.type : "Unknown"}`,
+    `Touchscreen: ${hasTouch ? "Yes" : "No"}`,
+    `Max Touch Points: ${nav.maxTouchPoints || 0}`,
+    `Battery Level: ${batteryLevel}`,
+    `Battery Charging: ${batteryCharging}`,
     `Language: ${nav.language}`,
+    `Languages: ${nav.languages ? nav.languages.join(", ") : "Unknown"}`,
     `Cookies Enabled: ${nav.cookieEnabled}`,
     `Do Not Track: ${nav.doNotTrack || "Unknown"}`,
     `Online: ${nav.onLine ? "Yes" : "No"}`,
+    `Vendor: ${nav.vendor || "Unknown"}`,
+    `PDF Viewer: ${nav.pdfViewerEnabled ? "Yes" : "No"}`,
+    `WebGL Vendor: ${webglVendor}`,
+    `WebGL Renderer: ${webglRenderer}`,
+    `WebGL Support: ${hasWebGL ? "Yes" : "No"}`,
+    `WebGL2 Support: ${hasWebGL2 ? "Yes" : "No"}`,
+    `WebRTC Support: ${hasWebRTC ? "Yes" : "No"}`,
+    `WebAssembly Support: ${hasWebAssembly ? "Yes" : "No"}`,
+    `Service Worker: ${hasServiceWorker ? "Yes" : "No"}`,
+    `Notifications API: ${hasNotifications ? "Yes" : "No"}`,
+    `Geolocation API: ${hasGeolocation ? "Yes" : "No"}`,
+    `Vibration API: ${hasVibration ? "Yes" : "No"}`,
+    `WebUSB: ${hasWebUSB ? "Yes" : "No"}`,
+    `Bluetooth API: ${hasBluetooth ? "Yes" : "No"}`,
+    `WebXR: ${hasWebXR ? "Yes" : "No"}`,
+    `Clipboard API: ${hasClipboard ? "Yes" : "No"}`,
+    `Credentials API: ${hasCredentials ? "Yes" : "No"}`,
+    `Payment Request: ${hasPaymentRequest ? "Yes" : "No"}`,
+    `Gamepad API: ${hasGamepad ? "Yes" : "No"}`,
+    `Web MIDI: ${hasWebMIDI ? "Yes" : "No"}`,
+    `Speech Synthesis Voices: ${voicesCount}`,
+    `Audio Context: ${audioContext}`,
+    `Browser Plugins: ${pluginsCount}`,
+    `Ad Blocker: ${adBlocker}`,
+    `Session Storage: ${sessionStorageAvailable}`,
+    `Local Storage: ${localStorageAvailable}`,
+    `Video Codecs: ${videoCodecs.join(", ") || "None"}`,
+    `Audio Codecs: ${audioCodecs.join(", ") || "None"}`,
+    `Pointer Type: ${pointerType}`,
+    `Hover Capable: ${hoverCapable}`,
+    `Display Mode: ${displayMode}`,
+    `Prefers Reduced Motion: ${prefersReducedMotion}`,
+    `Color Scheme Preference: ${colorScheme}`,
+    `Media Devices: ${mediaDevices}`,
+    `Storage Quota: ${storageQuota}`,
+    `LocalStorage: ${hasLocalStorage ? "Yes" : "No"}`,
+    `IndexedDB: ${hasIndexedDB ? "Yes" : "No"}`,
+    `WebSQL: ${hasWebSQL ? "Yes" : "No"}`,
+    `Canvas Fingerprint: ${canvasHash}`,
     `Referrer: ${document.referrer || "Direct / None"}`,
     `Page Load Time: ${Math.round(performance.now())} ms`
   ];
@@ -198,7 +490,7 @@ async function loadAndReveal() {
   overlay.innerHTML = "";
 
   lines.forEach((text, i) => {
-    const div = document.createElement("div");
+    const div = document. createElement("div");
     div.className = "line";
     div.textContent = text;
     overlay.appendChild(div);
