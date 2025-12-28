@@ -38,8 +38,6 @@ html, body {
 
 /* bye bye button */
 #byeByeBtn {
-  position: fixed;
-  bottom: 20px;
   font-size: 11px;
   opacity: 0.6;
   border: 1px solid rgba(255,255,255,0.4);
@@ -48,15 +46,75 @@ html, body {
   background: rgba(0,0,0,0.6);
   backdrop-filter: blur(6px);
   cursor: pointer;
-  z-index: 31;
+  margin-top: 20px;
+  display: inline-block;
 }
 #byeByeBtn:hover {
   opacity: 1;
 }
 
+#byeByeContainer {
+  margin-top: 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+#byeByeWarning {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+#privacyLink {
+  position: absolute;
+  bottom: 20px;
+  font-size: 11px;
+  opacity: 0.6;
+  cursor: pointer;
+  transition: opacity 2s ease;
+  background: none;
+  border: none;
+  color: white;
+  font-family: inherit;
+}
+
+#privacyLink:hover {
+  opacity: 1;
+}
+
+#privacyOverlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.95);
+  color: white;
+  z-index: 40;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 40px;
+  box-sizing: border-box;
+}
+
+#privacyOverlay.show {
+  display: flex;
+}
+
+#privacyContent {
+  max-width: 600px;
+  font-size: 14px;
+  line-height: 1.8;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+#privacyOverlay.show #privacyContent {
+  opacity: 1;
+}
+
 /* credits overlay */
 #creditsOverlay {
-  display: none;
   position: fixed;
   inset: 0;
   background: black;
@@ -66,10 +124,20 @@ html, body {
   align-items: center;
   text-align: center;
   flex-direction: column;
+  display: flex;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  /* fade-out speed */
+  transition: opacity 2s ease, visibility 0s linear 2s;
 }
 
 #creditsOverlay.show {
-  display: flex;
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  /* fade-in speed */
+  transition: opacity 0.9s ease;
 }
 
 #socialLinks {
@@ -78,23 +146,24 @@ html, body {
   display: flex;
   gap: 30px;
   opacity: 0;
-  transition: opacity 0.8s ease;
+  transition: opacity 2s ease;
 }
 
 #creditsOverlay.show #socialLinks {
   opacity: 1;
+  transition: opacity 0.9s ease;
 }
 
 #socialLinks a {
   color: white;
   font-size: 32px;
   text-decoration: none;
-  transition: transform 0.3s ease, opacity 0.3s ease;
+  transition: transform 0.2s ease, opacity 0.2s ease;
   opacity: 0.7;
 }
 
 #socialLinks a:hover {
-  transform: scale(1.2);
+  transform: scale(1.3);
   opacity: 1;
 }
 
@@ -102,11 +171,31 @@ html, body {
   font-size:  14px;
   line-height: 1.6;
   opacity: 0;
-  transition: opacity 0.8s ease;
+  transition: opacity 2s ease;
 }
 
 #creditsOverlay.show #creditsText {
   opacity: 1;
+  transition: opacity 0.9s ease;
+}
+
+#byeByeContainer {
+  opacity: 0;
+  transition: opacity 2s ease;
+}
+
+#creditsOverlay.show #byeByeContainer {
+  opacity: 1;
+  transition: opacity 0.9s ease;
+}
+
+#privacyLink {
+  opacity: 0;
+}
+
+#creditsOverlay.show #privacyLink {
+  opacity: 0.6;
+  transition: opacity 0.9s ease;
 }
 
 #gate {
@@ -172,13 +261,29 @@ html, body {
     <a href="https://tiktok.com/@eddieprivate10" target="_blank" onclick="event.stopPropagation()">
       <i class="fab fa-tiktok"></i>
     </a>
+    <a href="mailto:trustbro.help@gmail.com" onclick="event.stopPropagation()">
+      <i class="fas fa-envelope"></i>
+    </a>
   </div>
   <div id="creditsText">
     Dev- Eddie<br>
-    made this for fun lol.<br><br>
-    Btw i cant see your info.
+    made this for fun lol.
   </div>
-  <div id="byeByeBtn" onclick="event.stopPropagation(); destroyPage()">bye bye</div>
+  <div id="byeByeContainer">
+    <div id="byeByeWarning">dont click this bro 💔<br>↓</div>
+    <div id="byeByeBtn" onclick="event.stopPropagation(); destroyPage()">bye bye</div>
+  </div>
+  <button id="privacyLink" type="button" onclick="event.stopPropagation(); showPrivacy();">• Privacy</button>
+</div>
+
+<div id="privacyOverlay" onclick="hidePrivacy()">
+  <div id="privacyContent" onclick="event.stopPropagation()">
+    <h2 style="margin-bottom: 20px;">Privacy Notice</h2>
+    <p>All information displayed on this site is shown only to you in your browser. I cannot collect, store, or access any of your data. Everything is processed locally on your device.</p>
+    <p>This is purely an educational demonstration of browser fingerprinting and device information APIs.</p>
+    <p><strong>Important:</strong> If your personal information gets leaked or you have any security concerns, contact me immediately at <a href="mailto:trustbro.help@gmail.com" style="color: white; text-decoration: underline;" onclick="event.stopPropagation()">trustbro.help@gmail.com</a> and I will help you.</p>
+    <p style="margin-top: 30px; font-size: 12px; opacity: 0.6;">Click anywhere to close</p>
+  </div>
 </div>
 
 <div id="gate">
@@ -192,18 +297,28 @@ html, body {
 
 <script>
 function showCredits() {
-  const o = document.getElementById("creditsOverlay");
-  o.classList.add("show");
-  setTimeout(() => {
-    document.getElementById("creditsText").style.opacity = "1";
-  }, 50);
+  document.getElementById("creditsOverlay").classList.add("show");
 }
 
 function hideCredits() {
-  const o = document.getElementById("creditsOverlay");
-  document.getElementById("creditsText").style.opacity = "0";
+  document.getElementById("creditsOverlay").classList.remove("show");
+}
+
+function showPrivacy() {
+  const privacyOverlay = document.getElementById("privacyOverlay");
+  privacyOverlay.classList.add("show");
+  
   setTimeout(() => {
-    o.classList.remove("show");
+    document.getElementById("privacyContent").style.opacity = "1";
+  }, 50);
+}
+
+function hidePrivacy() {
+  const privacyOverlay = document.getElementById("privacyOverlay");
+  document.getElementById("privacyContent").style.opacity = "0";
+  
+  setTimeout(() => {
+    privacyOverlay.classList.remove("show");
   }, 500);
 }
 
